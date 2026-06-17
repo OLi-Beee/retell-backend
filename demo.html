@@ -1,139 +1,239 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Voice Call</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Test Our AI Voice - Master Voice Automation</title>
     <style>
-        body {
+        * {
             margin: 0;
             padding: 0;
-            background: #1a0b2e;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            box-sizing: border-box;
         }
-        .container {
-            text-align: center;
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a0b2e 0%, #2d1b4e 50%, #1a0b2e 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             padding: 20px;
         }
+
+        .container {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 32px;
+            padding: 48px;
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .logo {
+            color: #a78bfa;
+            font-size: 14px;
+            font-weight: 600;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
         h1 {
             color: white;
-            font-size: 24px;
-            margin-bottom: 20px;
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 12px;
         }
-        iframe {
+
+        .subtitle {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 32px;
+        }
+
+        .iframe-container {
+            position: relative;
             width: 100%;
-            max-width: 400px;
-            height: 600px;
-            border: none;
+            padding-bottom: 56.25%;
+            height: 0;
+            overflow: hidden;
             border-radius: 16px;
-            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
+
+        .iframe-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
         .btn {
-            display: inline-block;
-            padding: 16px 48px;
-            margin-top: 20px;
-            background: linear-gradient(135deg, #7c3aed, #a78bfa);
-            color: white;
+            width: 100%;
+            padding: 16px 32px;
             border: none;
             border-radius: 16px;
             font-size: 18px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
+            background: linear-gradient(135deg, #7c3aed, #a78bfa);
+            color: white;
+            box-shadow: 0 4px 15px rgba(124, 58, 237, 0.3);
+            margin-top: 20px;
         }
+
         .btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 8px 30px rgba(124, 58, 237, 0.4);
         }
+
         .btn:disabled {
             opacity: 0.5;
             cursor: not-allowed;
             transform: none;
         }
-        .status {
-            color: rgba(255,255,255,0.6);
-            margin: 16px 0;
+
+        .status-text {
+            color: rgba(255, 255, 255, 0.8);
             font-size: 14px;
+            font-weight: 500;
+            margin: 16px 0;
+            min-height: 24px;
         }
-        .footer {
-            color: rgba(255,255,255,0.2);
+
+        .footer-text {
+            color: rgba(255, 255, 255, 0.3);
             font-size: 12px;
-            margin-top: 16px;
+            margin-top: 24px;
+            letter-spacing: 0.5px;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🤖 Talk to Sarah</h1>
-        <div class="status" id="status">Ready to start</div>
-        <iframe id="callIframe" allow="microphone"></iframe>
-        <br>
-        <button class="btn" id="startBtn">🎙️ Start Call</button>
-        <div class="footer">🔒 Secure • No sign-up required</div>
+        <div class="logo">✦ Master Voice Automation</div>
+        <h1>Test Our AI Voice</h1>
+        <p class="subtitle">Have a real conversation with Sarah, our AI receptionist.</p>
+
+        <div class="iframe-container" id="iframeContainer">
+            <iframe id="retellIframe" allow="microphone"></iframe>
+        </div>
+
+        <div class="status-text" id="status">Click below to start the call</div>
+
+        <button class="btn" id="callBtn">🎙️ Start Conversation</button>
+
+        <p class="footer-text">🔒 Secure • No sign-up required • Your call is private</p>
     </div>
 
     <script>
         const AGENT_ID = 'agent_4cf5ce74faa61c4a27f7661216';
         const BACKEND_URL = 'https://retell-backend-rho.vercel.app';
-        const iframe = document.getElementById('callIframe');
+        const iframe = document.getElementById('retellIframe');
         const statusEl = document.getElementById('status');
-        const startBtn = document.getElementById('startBtn');
-        let isActive = false;
+        const callBtn = document.getElementById('callBtn');
+
+        let isCallActive = false;
+
+        function updateStatus(text, type = '') {
+            statusEl.textContent = text;
+            statusEl.style.color = type === 'error' ? '#f87171' : type === 'success' ? '#34d399' : 'rgba(255,255,255,0.8)';
+        }
 
         async function startCall() {
             try {
-                startBtn.disabled = true;
-                statusEl.textContent = 'Creating call...';
-                startBtn.textContent = '⏳ Connecting...';
+                callBtn.disabled = true;
+                updateStatus('Creating call session...');
 
+                // Create web call
                 const response = await fetch(`${BACKEND_URL}/api/create-web-call`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ agent_id: AGENT_ID })
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ agent_id: AGENT_ID }),
                 });
 
-                if (!response.ok) throw new Error('API error');
-                const data = await response.json();
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
 
-                if (!data.access_token) throw new Error('No access token');
+                const callData = await response.json();
 
-                const retellUrl = `https://app.retellai.com/web-call?access_token=${data.access_token}`;
+                if (!callData || !callData.access_token) {
+                    throw new Error('No access token received');
+                }
+
+                // Build the Retell Web Call URL
+                const retellUrl = `https://app.retellai.com/web-call?access_token=${callData.access_token}`;
+                
+                // Load the iframe
                 iframe.src = retellUrl;
                 
-                isActive = true;
-                statusEl.textContent = '✅ Connected! Talk to Sarah';
-                startBtn.textContent = '🔴 End Call';
-                startBtn.style.background = 'linear-gradient(135deg, #ef4444, #dc2626)';
-                startBtn.disabled = false;
+                updateStatus('Connected! Sarah is ready.', 'success');
+                isCallActive = true;
+                callBtn.textContent = '📞 End Call';
+                callBtn.style.background = 'linear-gradient(135deg, #ef4444, #dc2626)';
 
             } catch (error) {
-                statusEl.textContent = '❌ Error: ' + error.message;
-                startBtn.textContent = '🔄 Try Again';
-                startBtn.disabled = false;
-                startBtn.style.background = 'linear-gradient(135deg, #7c3aed, #a78bfa)';
+                console.error('Call error:', error);
+                updateStatus(`Error: ${error.message || 'Please try again'}`, 'error');
+                callBtn.disabled = false;
+                callBtn.textContent = '🔄 Try Again';
             }
         }
 
         function endCall() {
             iframe.src = '';
-            isActive = false;
-            statusEl.textContent = 'Call ended';
-            startBtn.textContent = '🎙️ Start Call';
-            startBtn.style.background = 'linear-gradient(135deg, #7c3aed, #a78bfa)';
-            startBtn.disabled = false;
+            isCallActive = false;
+            updateStatus('Call ended.', 'success');
+            callBtn.textContent = '🎙️ Start Conversation';
+            callBtn.style.background = 'linear-gradient(135deg, #7c3aed, #a78bfa)';
+            callBtn.disabled = false;
         }
 
-        startBtn.addEventListener('click', () => {
-            if (isActive) {
+        callBtn.addEventListener('click', () => {
+            if (isCallActive) {
                 endCall();
             } else {
                 startCall();
             }
         });
+
+        // Handle iframe load events to detect when call ends
+        iframe.addEventListener('load', () => {
+            // If the iframe loads and we're not in a call, it might have ended
+            // This is a basic check - the iframe will redirect when call ends
+            setTimeout(() => {
+                try {
+                    // Try to detect if the iframe is still showing the call
+                    // This is limited by CORS, but we can check the URL
+                    const currentUrl = iframe.src;
+                    if (currentUrl && !currentUrl.includes('access_token')) {
+                        endCall();
+                    }
+                } catch (e) {
+                    // CORS prevents reading iframe URL, that's fine
+                }
+            }, 1000);
+        });
+
+        // Also handle page close to end call gracefully
+        window.addEventListener('beforeunload', () => {
+            if (isCallActive) {
+                iframe.src = '';
+            }
+        });
+
+        updateStatus('Click below to start the call');
     </script>
 </body>
 </html>
