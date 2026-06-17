@@ -1,5 +1,9 @@
 {
+  "public": true,
   "rewrites": [
-    { "source": "/(.*)", "destination": "/api/$1" }
+    {
+      "source": "/demo",
+      "destination": "/demo.html"
+    }
   ]
 }
