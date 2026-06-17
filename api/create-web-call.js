@@ -11,8 +11,8 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'agent_id is required' });
     }
 
-    // Create a web call using Retell API
-    const response = await fetch('https://api.retellai.com/create-web-call', {
+    // Create a web call using Retell API - corrected URL
+    const response = await fetch('https://api.retellai.com/v1/web-calls', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${process.env.RETELL_API_KEY}`,
@@ -20,7 +20,6 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         agent_id: agent_id,
-        // Optional: add any custom parameters here
       }),
     });
 
