@@ -86,10 +86,6 @@
             box-shadow: 0 0 100px rgba(124, 58, 237, 0.6);
         }
 
-        .avatar-circle.connecting {
-            animation: spin 1s linear infinite;
-        }
-
         @keyframes pulse {
             0%,
             100% {
@@ -97,15 +93,6 @@
             }
             50% {
                 transform: scale(1.05);
-            }
-        }
-
-        @keyframes spin {
-            0% {
-                transform: rotate(0deg);
-            }
-            100% {
-                transform: rotate(360deg);
             }
         }
 
@@ -155,90 +142,6 @@
             box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
         }
 
-        .btn.end-call:hover:not(:disabled) {
-            box-shadow: 0 8px 30px rgba(239, 68, 68, 0.4);
-        }
-
-        .wave-container {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-            height: 40px;
-            margin-top: 16px;
-        }
-
-        .wave-bar {
-            width: 4px;
-            height: 20px;
-            background: #a78bfa;
-            border-radius: 2px;
-            transition: all 0.3s ease;
-        }
-
-        .wave-bar.active {
-            animation: wave 0.5s ease-in-out infinite alternate;
-        }
-
-        .wave-bar:nth-child(2) {
-            animation-delay: 0.1s;
-        }
-        .wave-bar:nth-child(3) {
-            animation-delay: 0.2s;
-        }
-        .wave-bar:nth-child(4) {
-            animation-delay: 0.3s;
-        }
-        .wave-bar:nth-child(5) {
-            animation-delay: 0.4s;
-        }
-        .wave-bar:nth-child(6) {
-            animation-delay: 0.5s;
-        }
-        .wave-bar:nth-child(7) {
-            animation-delay: 0.6s;
-        }
-
-        @keyframes wave {
-            0% {
-                height: 10px;
-                opacity: 0.3;
-            }
-            100% {
-                height: 35px;
-                opacity: 1;
-            }
-        }
-
-        .transcript-box {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 12px;
-            padding: 16px;
-            margin-top: 20px;
-            min-height: 60px;
-            max-height: 120px;
-            overflow-y: auto;
-            text-align: left;
-            border: 1px solid rgba(255, 255, 255, 0.05);
-        }
-
-        .transcript-box p {
-            color: rgba(255, 255, 255, 0.7);
-            font-size: 14px;
-            line-height: 1.6;
-            margin: 0;
-        }
-
-        .transcript-box .user {
-            color: #a78bfa;
-            font-weight: 500;
-        }
-
-        .transcript-box .agent {
-            color: #34d399;
-            font-weight: 500;
-        }
-
         .footer-text {
             color: rgba(255, 255, 255, 0.3);
             font-size: 12px;
@@ -246,40 +149,14 @@
             letter-spacing: 0.5px;
         }
 
-        /* Scrollbar styling */
-        .transcript-box::-webkit-scrollbar {
-            width: 4px;
-        }
-
-        .transcript-box::-webkit-scrollbar-track {
+        .call-info {
             background: rgba(255, 255, 255, 0.05);
-            border-radius: 2px;
-        }
-
-        .transcript-box::-webkit-scrollbar-thumb {
-            background: rgba(167, 139, 250, 0.3);
-            border-radius: 2px;
-        }
-
-        @media (max-width: 600px) {
-            .container {
-                padding: 32px 24px;
-            }
-
-            h1 {
-                font-size: 24px;
-            }
-
-            .avatar-circle {
-                width: 100px;
-                height: 100px;
-                font-size: 40px;
-            }
-
-            .btn {
-                font-size: 16px;
-                padding: 14px 24px;
-            }
+            border-radius: 12px;
+            padding: 16px;
+            margin-top: 16px;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 14px;
+            line-height: 1.6;
         }
     </style>
 </head>
@@ -295,42 +172,28 @@
             </div>
         </div>
 
-        <div class="wave-container" id="waveContainer">
-            <div class="wave-bar"></div>
-            <div class="wave-bar"></div>
-            <div class="wave-bar"></div>
-            <div class="wave-bar"></div>
-            <div class="wave-bar"></div>
-            <div class="wave-bar"></div>
-            <div class="wave-bar"></div>
-        </div>
-
         <div class="status-text" id="status">Ready to talk to Sarah</div>
 
         <button class="btn" id="callBtn">Start Conversation</button>
 
-        <div class="transcript-box" id="transcript">
-            <p style="color: rgba(255,255,255,0.4); font-style: italic;">Transcript will appear here...</p>
+        <div class="call-info" id="callInfo">
+            <p>🔊 Click start and allow microphone access when prompted.</p>
         </div>
 
         <p class="footer-text">🔒 Secure • No sign-up required • Your call is private</p>
     </div>
 
     <script>
-        // Retell Web Client
-        let retellClient = null;
-        let isCallActive = false;
-        let transcriptLines = [];
+        const AGENT_ID = 'agent_4cf5ce74faa61c4a27f7661216';
+        const BACKEND_URL = 'https://retell-backend-rho.vercel.app';
 
         const statusEl = document.getElementById('status');
         const avatarEl = document.getElementById('avatar');
         const callBtn = document.getElementById('callBtn');
-        const transcriptEl = document.getElementById('transcript');
-        const waveBars = document.querySelectorAll('.wave-bar');
+        const callInfo = document.getElementById('callInfo');
 
-        // Retell Agent ID
-        const AGENT_ID = 'agent_4cf5ce74faa61c4a27f7661216';
-        const BACKEND_URL = 'https://retell-backend-rho.vercel.app';
+        let isCallActive = false;
+        let retellClient = null;
 
         function updateStatus(text, type = '') {
             statusEl.textContent = text;
@@ -338,110 +201,71 @@
         }
 
         function updateAvatar(state) {
-            avatarEl.className = 'avatar-circle';
             if (state === 'listening') {
-                avatarEl.classList.add('listening');
+                avatarEl.className = 'avatar-circle listening';
                 avatarEl.textContent = '👂';
             } else if (state === 'speaking') {
-                avatarEl.classList.add('speaking');
+                avatarEl.className = 'avatar-circle speaking';
                 avatarEl.textContent = '🗣️';
             } else if (state === 'connecting') {
-                avatarEl.classList.add('connecting');
+                avatarEl.className = 'avatar-circle';
                 avatarEl.textContent = '🔄';
-            } else if (state === 'idle') {
-                avatarEl.textContent = '🤖';
             } else if (state === 'error') {
+                avatarEl.className = 'avatar-circle';
                 avatarEl.textContent = '❌';
             } else if (state === 'ended') {
+                avatarEl.className = 'avatar-circle';
                 avatarEl.textContent = '👋';
-            }
-        }
-
-        function toggleWave(active) {
-            waveBars.forEach(bar => {
-                if (active) {
-                    bar.classList.add('active');
-                } else {
-                    bar.classList.remove('active');
-                }
-            });
-        }
-
-        function addTranscript(text, speaker) {
-            const speakerLabel = speaker === 'user' ? 'You' : 'Sarah';
-            const className = speaker === 'user' ? 'user' : 'agent';
-            transcriptLines.push(`<p><span class="${className}">${speakerLabel}:</span> ${text}</p>`);
-            if (transcriptLines.length > 10) {
-                transcriptLines.shift();
-            }
-            transcriptEl.innerHTML = transcriptLines.join('');
-            transcriptEl.scrollTop = transcriptEl.scrollHeight;
-        }
-
-        function setCallButton(endCall = false) {
-            if (endCall) {
-                callBtn.textContent = 'End Call';
-                callBtn.className = 'btn end-call';
-                callBtn.disabled = false;
             } else {
-                callBtn.textContent = 'Start Conversation';
-                callBtn.className = 'btn';
-                callBtn.disabled = false;
+                avatarEl.className = 'avatar-circle';
+                avatarEl.textContent = '🤖';
             }
         }
 
-        // Create a web call via backend
-        async function createWebCall() {
-            try {
-                updateStatus('Connecting to Sarah...', '');
-                updateAvatar('connecting');
-
-                const response = await fetch(`${BACKEND_URL}/api/create-web-call`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        agent_id: AGENT_ID,
-                    }),
-                });
-
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}`);
+        // Dynamically load Retell SDK
+        function loadRetellSDK() {
+            return new Promise((resolve, reject) => {
+                if (window.RetellWebClient) {
+                    resolve(window.RetellWebClient);
+                    return;
                 }
 
-                const data = await response.json();
-                return data;
-            } catch (error) {
-                console.error('Error creating web call:', error);
-                updateStatus('Failed to connect. Please try again.', 'error');
-                updateAvatar('error');
-                return null;
-            }
-        }
-
-        // Initialize Retell client
-        function initRetellClient(accessToken) {
-            return new Promise((resolve, reject) => {
-                // Load Retell Web SDK
                 const script = document.createElement('script');
-                script.src = 'https://unpkg.com/retell-sdk@latest/dist/retell-web-sdk.umd.js';
-                script.onload = () => {
-                    try {
-                        const client = new window.RetellWebClient();
-                        resolve(client);
-                    } catch (err) {
-                        reject(err);
+                // Try multiple CDN sources
+                const cdnUrls = [
+                    'https://unpkg.com/retell-sdk@latest/dist/retell-web-sdk.umd.js',
+                    'https://cdn.jsdelivr.net/npm/retell-sdk@latest/dist/retell-web-sdk.umd.js'
+                ];
+
+                let currentIndex = 0;
+
+                function tryNextCDN() {
+                    if (currentIndex >= cdnUrls.length) {
+                        reject(new Error('Failed to load Retell SDK from all CDNs'));
+                        return;
                     }
-                };
-                script.onerror = reject;
-                document.head.appendChild(script);
+
+                    script.src = cdnUrls[currentIndex];
+                    script.onload = () => {
+                        if (window.RetellWebClient) {
+                            resolve(window.RetellWebClient);
+                        } else {
+                            reject(new Error('RetellWebClient not found after loading'));
+                        }
+                    };
+                    script.onerror = () => {
+                        currentIndex++;
+                        tryNextCDN();
+                    };
+                    document.head.appendChild(script);
+                }
+
+                tryNextCDN();
             });
         }
 
         async function startCall() {
             if (isCallActive) {
-                // End the call
                 endCall();
                 return;
             }
@@ -449,12 +273,13 @@
             try {
                 callBtn.disabled = true;
                 updateStatus('Requesting microphone access...', '');
+                updateAvatar('connecting');
 
-                // Request microphone permission first
+                // Request microphone
                 try {
                     await navigator.mediaDevices.getUserMedia({ audio: true });
                 } catch (permError) {
-                    updateStatus('Microphone access denied. Please allow mic access and try again.', 'error');
+                    updateStatus('Microphone access denied. Please allow mic access.', 'error');
                     updateAvatar('error');
                     callBtn.disabled = false;
                     return;
@@ -463,55 +288,52 @@
                 updateStatus('Creating call session...', '');
 
                 // Create web call
-                const callData = await createWebCall();
+                const response = await fetch(`${BACKEND_URL}/api/create-web-call`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ agent_id: AGENT_ID }),
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const callData = await response.json();
+
                 if (!callData || !callData.access_token) {
-                    callBtn.disabled = false;
-                    return;
+                    throw new Error('No access token received');
                 }
 
                 updateStatus('Connecting to Sarah...', '');
-                updateAvatar('connecting');
 
-                // Initialize Retell client
-                const client = await initRetellClient(callData.access_token);
+                // Load Retell SDK
+                const RetellClient = await loadRetellSDK();
+                const client = new RetellClient();
+                retellClient = client;
 
-                // Set up event handlers
+                // Event handlers
                 client.on('connected', () => {
                     isCallActive = true;
                     updateStatus('Connected! Sarah is listening...', '');
                     updateAvatar('listening');
-                    toggleWave(true);
-                    setCallButton(true);
-                    addTranscript('Hello! This is Sarah from Master Voice Automation. How can I help you today?', 'agent');
-                });
-
-                client.on('audio', (audio) => {
-                    // Audio is being processed
+                    callBtn.textContent = 'End Call';
+                    callBtn.className = 'btn end-call';
+                    callBtn.disabled = false;
+                    callInfo.innerHTML = '<p>✅ Connected! Sarah is ready to talk.</p>';
                 });
 
                 client.on('update', (update) => {
-                    if (update.transcript) {
-                        const speaker = update.is_final ? 'agent' : 'user';
-                        const text = update.transcript;
-                        if (update.is_final) {
-                            addTranscript(text, speaker);
-                        }
-                    }
-
-                    if (update.status) {
-                        if (update.status === 'listening') {
-                            updateStatus('Sarah is listening...', '');
-                            updateAvatar('listening');
-                            toggleWave(true);
-                        } else if (update.status === 'speaking') {
-                            updateStatus('Sarah is speaking...', '');
-                            updateAvatar('speaking');
-                            toggleWave(true);
-                        } else if (update.status === 'thinking') {
-                            updateStatus('Sarah is thinking...', '');
-                            updateAvatar('listening');
-                            toggleWave(true);
-                        }
+                    if (update.status === 'listening') {
+                        updateStatus('Sarah is listening...', '');
+                        updateAvatar('listening');
+                    } else if (update.status === 'speaking') {
+                        updateStatus('Sarah is speaking...', '');
+                        updateAvatar('speaking');
+                    } else if (update.status === 'thinking') {
+                        updateStatus('Sarah is thinking...', '');
+                        updateAvatar('listening');
                     }
                 });
 
@@ -519,24 +341,22 @@
                     console.error('Retell error:', error);
                     updateStatus('Connection error. Please try again.', 'error');
                     updateAvatar('error');
-                    toggleWave(false);
                     isCallActive = false;
                     callBtn.disabled = false;
-                    setCallButton(false);
+                    callBtn.textContent = 'Start Conversation';
+                    callBtn.className = 'btn';
+                    callInfo.innerHTML = '<p>❌ Connection error. Please refresh and try again.</p>';
                 });
 
                 client.on('ended', () => {
-                    updateStatus('Call ended. Thank you for testing!', 'success');
+                    updateStatus('Call ended. Thank you!', 'success');
                     updateAvatar('ended');
-                    toggleWave(false);
                     isCallActive = false;
                     callBtn.disabled = false;
-                    setCallButton(false);
-                    addTranscript('*Call ended*', 'system');
+                    callBtn.textContent = 'Start Conversation';
+                    callBtn.className = 'btn';
+                    callInfo.innerHTML = '<p>👋 Call ended. Thanks for testing!</p>';
                 });
-
-                // Store client reference
-                retellClient = client;
 
                 // Start the call
                 await client.startCall({
@@ -547,10 +367,10 @@
                 console.error('Call error:', error);
                 updateStatus('Something went wrong. Please refresh and try again.', 'error');
                 updateAvatar('error');
-                toggleWave(false);
-                isCallActive = false;
                 callBtn.disabled = false;
-                setCallButton(false);
+                callBtn.textContent = 'Start Conversation';
+                callBtn.className = 'btn';
+                callInfo.innerHTML = `<p>❌ Error: ${error.message || 'Unknown error'}</p>`;
             }
         }
 
@@ -563,38 +383,24 @@
                 }
             }
             isCallActive = false;
-            toggleWave(false);
-            updateStatus('Call ending...', '');
+            callBtn.textContent = 'Ending...';
             callBtn.disabled = true;
 
             setTimeout(() => {
                 callBtn.disabled = false;
-                setCallButton(false);
-                if (statusEl.textContent === 'Call ending...') {
-                    updateStatus('Call ended.', 'success');
-                    updateAvatar('ended');
-                }
+                callBtn.textContent = 'Start Conversation';
+                callBtn.className = 'btn';
+                updateStatus('Call ended.', 'success');
+                updateAvatar('ended');
+                callInfo.innerHTML = '<p>👋 Call ended. Thanks for testing!</p>';
             }, 1000);
         }
 
-        // Event listener
         callBtn.addEventListener('click', startCall);
-
-        // Handle page close
-        window.addEventListener('beforeunload', () => {
-            if (retellClient && isCallActive) {
-                try {
-                    retellClient.stopCall();
-                } catch (e) {
-                    // ignore
-                }
-            }
-        });
 
         // Initial state
         updateStatus('Ready to talk to Sarah', '');
         updateAvatar('idle');
-        setCallButton(false);
     </script>
 </body>
 </html>
