@@ -1,9 +1,12 @@
 {
-  "public": true,
   "rewrites": [
     {
       "source": "/demo",
       "destination": "/demo.html"
+    },
+    {
+      "source": "/call",
+      "destination": "/call.html"
     }
   ]
 }
