@@ -27,7 +27,7 @@
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 32px;
             padding: 48px;
-            max-width: 500px;
+            max-width: 600px;
             width: 100%;
             text-align: center;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
@@ -56,60 +56,23 @@
             margin-bottom: 32px;
         }
 
-        .avatar-container {
-            width: 120px;
-            height: 120px;
-            margin: 0 auto 24px;
+        .iframe-container {
             position: relative;
+            width: 100%;
+            padding-bottom: 56.25%;
+            height: 0;
+            overflow: hidden;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        .avatar-circle {
-            width: 120px;
-            height: 120px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #7c3aed, #a78bfa);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 48px;
-            box-shadow: 0 0 60px rgba(124, 58, 237, 0.3);
-            transition: all 0.3s ease;
-        }
-
-        .avatar-circle.listening {
-            animation: pulse 1.5s ease-in-out infinite;
-            box-shadow: 0 0 80px rgba(124, 58, 237, 0.5);
-        }
-
-        .avatar-circle.speaking {
-            animation: pulse 0.8s ease-in-out infinite;
-            box-shadow: 0 0 100px rgba(124, 58, 237, 0.6);
-        }
-
-        @keyframes pulse {
-            0%,
-            100% {
-                transform: scale(1);
-            }
-            50% {
-                transform: scale(1.05);
-            }
-        }
-
-        .status-text {
-            color: rgba(255, 255, 255, 0.8);
-            font-size: 14px;
-            font-weight: 500;
-            margin-bottom: 24px;
-            min-height: 24px;
-        }
-
-        .status-text.error {
-            color: #f87171;
-        }
-
-        .status-text.success {
-            color: #34d399;
+        .iframe-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
         }
 
         .btn {
@@ -124,9 +87,10 @@
             background: linear-gradient(135deg, #7c3aed, #a78bfa);
             color: white;
             box-shadow: 0 4px 15px rgba(124, 58, 237, 0.3);
+            margin-top: 20px;
         }
 
-        .btn:hover:not(:disabled) {
+        .btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 8px 30px rgba(124, 58, 237, 0.4);
         }
@@ -137,9 +101,12 @@
             transform: none;
         }
 
-        .btn.end-call {
-            background: linear-gradient(135deg, #ef4444, #dc2626);
-            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+        .status-text {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 14px;
+            font-weight: 500;
+            margin: 16px 0;
+            min-height: 24px;
         }
 
         .footer-text {
@@ -148,37 +115,21 @@
             margin-top: 24px;
             letter-spacing: 0.5px;
         }
-
-        .call-info {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 12px;
-            padding: 16px;
-            margin-top: 16px;
-            color: rgba(255, 255, 255, 0.6);
-            font-size: 14px;
-            line-height: 1.6;
-        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="logo">✦ Master Voice Automation</div>
         <h1>Test Our AI Voice</h1>
-        <p class="subtitle">Have a real conversation with Sarah, our AI receptionist. She'll handle your call just like a human would.</p>
+        <p class="subtitle">Have a real conversation with Sarah, our AI receptionist.</p>
 
-        <div class="avatar-container">
-            <div class="avatar-circle" id="avatar">
-                🤖
-            </div>
+        <div class="iframe-container" id="iframeContainer">
+            <iframe id="retellIframe" allow="microphone"></iframe>
         </div>
 
-        <div class="status-text" id="status">Ready to talk to Sarah</div>
+        <div class="status-text" id="status">Click below to start the call</div>
 
-        <button class="btn" id="callBtn">Start Conversation</button>
-
-        <div class="call-info" id="callInfo">
-            <p>🔊 Click start and allow microphone access when prompted.</p>
-        </div>
+        <button class="btn" id="callBtn">🎙️ Start Conversation</button>
 
         <p class="footer-text">🔒 Secure • No sign-up required • Your call is private</p>
     </div>
@@ -186,106 +137,21 @@
     <script>
         const AGENT_ID = 'agent_4cf5ce74faa61c4a27f7661216';
         const BACKEND_URL = 'https://retell-backend-rho.vercel.app';
-
+        const iframe = document.getElementById('retellIframe');
         const statusEl = document.getElementById('status');
-        const avatarEl = document.getElementById('avatar');
         const callBtn = document.getElementById('callBtn');
-        const callInfo = document.getElementById('callInfo');
 
         let isCallActive = false;
-        let retellClient = null;
 
         function updateStatus(text, type = '') {
             statusEl.textContent = text;
-            statusEl.className = 'status-text' + (type ? ' ' + type : '');
-        }
-
-        function updateAvatar(state) {
-            if (state === 'listening') {
-                avatarEl.className = 'avatar-circle listening';
-                avatarEl.textContent = '👂';
-            } else if (state === 'speaking') {
-                avatarEl.className = 'avatar-circle speaking';
-                avatarEl.textContent = '🗣️';
-            } else if (state === 'connecting') {
-                avatarEl.className = 'avatar-circle';
-                avatarEl.textContent = '🔄';
-            } else if (state === 'error') {
-                avatarEl.className = 'avatar-circle';
-                avatarEl.textContent = '❌';
-            } else if (state === 'ended') {
-                avatarEl.className = 'avatar-circle';
-                avatarEl.textContent = '👋';
-            } else {
-                avatarEl.className = 'avatar-circle';
-                avatarEl.textContent = '🤖';
-            }
-        }
-
-        // Dynamically load Retell SDK
-        function loadRetellSDK() {
-            return new Promise((resolve, reject) => {
-                if (window.RetellWebClient) {
-                    resolve(window.RetellWebClient);
-                    return;
-                }
-
-                const script = document.createElement('script');
-                // Try multiple CDN sources
-                const cdnUrls = [
-                    'https://unpkg.com/retell-sdk@latest/dist/retell-web-sdk.umd.js',
-                    'https://cdn.jsdelivr.net/npm/retell-sdk@latest/dist/retell-web-sdk.umd.js'
-                ];
-
-                let currentIndex = 0;
-
-                function tryNextCDN() {
-                    if (currentIndex >= cdnUrls.length) {
-                        reject(new Error('Failed to load Retell SDK from all CDNs'));
-                        return;
-                    }
-
-                    script.src = cdnUrls[currentIndex];
-                    script.onload = () => {
-                        if (window.RetellWebClient) {
-                            resolve(window.RetellWebClient);
-                        } else {
-                            reject(new Error('RetellWebClient not found after loading'));
-                        }
-                    };
-                    script.onerror = () => {
-                        currentIndex++;
-                        tryNextCDN();
-                    };
-                    document.head.appendChild(script);
-                }
-
-                tryNextCDN();
-            });
+            statusEl.style.color = type === 'error' ? '#f87171' : type === 'success' ? '#34d399' : 'rgba(255,255,255,0.8)';
         }
 
         async function startCall() {
-            if (isCallActive) {
-                endCall();
-                return;
-            }
-
             try {
                 callBtn.disabled = true;
-                updateStatus('Requesting microphone access...', '');
-                updateAvatar('connecting');
-
-                // Request microphone
-                try {
-                    await navigator.mediaDevices.getUserMedia({ audio: true });
-                } catch (permError) {
-                    updateStatus('Microphone access denied. Please allow mic access.', 'error');
-                    updateAvatar('error');
-                    callBtn.disabled = false;
-                    return;
-                }
-
-                updateStatus('Creating call session...', '');
+                updateStatus('Creating call session...');
 
                 // Create web call
                 const response = await fetch(`${BACKEND_URL}/api/create-web-call`, {
@@ -306,101 +172,68 @@
                     throw new Error('No access token received');
                 }
 
-                updateStatus('Connecting to Sarah...', '');
-
-                // Load Retell SDK
-                const RetellClient = await loadRetellSDK();
-                const client = new RetellClient();
-                retellClient = client;
-
-                // Event handlers
-                client.on('connected', () => {
-                    isCallActive = true;
-                    updateStatus('Connected! Sarah is listening...', '');
-                    updateAvatar('listening');
-                    callBtn.textContent = 'End Call';
-                    callBtn.className = 'btn end-call';
-                    callBtn.disabled = false;
-                    callInfo.innerHTML = '<p>✅ Connected! Sarah is ready to talk.</p>';
-                });
-
-                client.on('update', (update) => {
-                    if (update.status === 'listening') {
-                        updateStatus('Sarah is listening...', '');
-                        updateAvatar('listening');
-                    } else if (update.status === 'speaking') {
-                        updateStatus('Sarah is speaking...', '');
-                        updateAvatar('speaking');
-                    } else if (update.status === 'thinking') {
-                        updateStatus('Sarah is thinking...', '');
-                        updateAvatar('listening');
-                    }
-                });
-
-                client.on('error', (error) => {
-                    console.error('Retell error:', error);
-                    updateStatus('Connection error. Please try again.', 'error');
-                    updateAvatar('error');
-                    isCallActive = false;
-                    callBtn.disabled = false;
-                    callBtn.textContent = 'Start Conversation';
-                    callBtn.className = 'btn';
-                    callInfo.innerHTML = '<p>❌ Connection error. Please refresh and try again.</p>';
-                });
-
-                client.on('ended', () => {
-                    updateStatus('Call ended. Thank you!', 'success');
-                    updateAvatar('ended');
-                    isCallActive = false;
-                    callBtn.disabled = false;
-                    callBtn.textContent = 'Start Conversation';
-                    callBtn.className = 'btn';
-                    callInfo.innerHTML = '<p>👋 Call ended. Thanks for testing!</p>';
-                });
-
-                // Start the call
-                await client.startCall({
-                    accessToken: callData.access_token,
-                });
+                // Build the Retell Web Call URL
+                const retellUrl = `https://app.retellai.com/web-call?access_token=${callData.access_token}`;
+                
+                // Load the iframe
+                iframe.src = retellUrl;
+                
+                updateStatus('Connected! Sarah is ready.', 'success');
+                isCallActive = true;
+                callBtn.textContent = '📞 End Call';
+                callBtn.style.background = 'linear-gradient(135deg, #ef4444, #dc2626)';
 
             } catch (error) {
                 console.error('Call error:', error);
-                updateStatus('Something went wrong. Please refresh and try again.', 'error');
-                updateAvatar('error');
+                updateStatus(`Error: ${error.message || 'Please try again'}`, 'error');
                 callBtn.disabled = false;
-                callBtn.textContent = 'Start Conversation';
-                callBtn.className = 'btn';
-                callInfo.innerHTML = `<p>❌ Error: ${error.message || 'Unknown error'}</p>`;
+                callBtn.textContent = '🔄 Try Again';
             }
         }
 
         function endCall() {
-            if (retellClient && isCallActive) {
-                try {
-                    retellClient.stopCall();
-                } catch (e) {
-                    console.error('Error ending call:', e);
-                }
-            }
+            iframe.src = '';
             isCallActive = false;
-            callBtn.textContent = 'Ending...';
-            callBtn.disabled = true;
-
-            setTimeout(() => {
-                callBtn.disabled = false;
-                callBtn.textContent = 'Start Conversation';
-                callBtn.className = 'btn';
-                updateStatus('Call ended.', 'success');
-                updateAvatar('ended');
-                callInfo.innerHTML = '<p>👋 Call ended. Thanks for testing!</p>';
-            }, 1000);
+            updateStatus('Call ended.', 'success');
+            callBtn.textContent = '🎙️ Start Conversation';
+            callBtn.style.background = 'linear-gradient(135deg, #7c3aed, #a78bfa)';
+            callBtn.disabled = false;
         }
 
-        callBtn.addEventListener('click', startCall);
+        callBtn.addEventListener('click', () => {
+            if (isCallActive) {
+                endCall();
+            } else {
+                startCall();
+            }
+        });
 
-        // Initial state
-        updateStatus('Ready to talk to Sarah', '');
-        updateAvatar('idle');
+        // Handle iframe load events to detect when call ends
+        iframe.addEventListener('load', () => {
+            // If the iframe loads and we're not in a call, it might have ended
+            // This is a basic check - the iframe will redirect when call ends
+            setTimeout(() => {
+                try {
+                    // Try to detect if the iframe is still showing the call
+                    // This is limited by CORS, but we can check the URL
+                    const currentUrl = iframe.src;
+                    if (currentUrl && !currentUrl.includes('access_token')) {
+                        endCall();
+                    }
+                } catch (e) {
+                    // CORS prevents reading iframe URL, that's fine
+                }
+            }, 1000);
+        });
+
+        // Also handle page close to end call gracefully
+        window.addEventListener('beforeunload', () => {
+            if (isCallActive) {
+                iframe.src = '';
+            }
+        });
+
+        updateStatus('Click below to start the call');
     </script>
 </body>
 </html>
