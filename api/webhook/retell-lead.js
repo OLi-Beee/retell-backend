@@ -25,9 +25,6 @@ export default async function handler(req, res) {
     // 2. Send email notification
     await sendEmailNotification(leadName, leadPhone, leadNotes, call_id);
 
-    // 3. Create contact in GoHighLevel
-    await createGHLContact(leadName, leadPhone, leadNotes);
-
     return res.status(200).json({ 
       success: true,
       lead: { name: leadName, phone: leadPhone }
@@ -90,7 +87,7 @@ async function sendEmailNotification(name, phone, notes, callId) {
 
   const msg = {
     to: 'info@mastervoiceautomation.com',
-    from: 'leads@mastervoiceautomation.com',
+    from: 'info@mastervoiceautomation.com',
     subject: '🆕 New Lead from AI Voice Demo!',
     html: `
       <h2>New Lead Captured by Sarah</h2>
@@ -99,37 +96,8 @@ async function sendEmailNotification(name, phone, notes, callId) {
       <p><strong>Notes:</strong> ${notes || 'None'}</p>
       <p><strong>Call ID:</strong> ${callId || 'N/A'}</p>
       <p><strong>Time:</strong> ${new Date().toLocaleString()}</p>
-      <hr>
-      <p><a href="https://app.retellai.com/calls/${callId}">View call recording</a></p>
     `
   };
 
   await sgMail.send(msg);
-}
-
-// Create contact in GoHighLevel
-async function createGHLContact(name, phone, notes) {
-  const response = await fetch('https://rest.gohighlevel.com/v1/contacts/', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${process.env.GHL_API_KEY}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      name: name,
-      phone: phone,
-      customField: {
-        source: 'Retell AI Demo',
-        notes: notes || 'Captured via AI voice agent'
-      },
-      tags: ['ai-demo', 'retell-lead']
-    })
-  });
-
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`GHL API error: ${error}`);
-  }
-
-  return await response.json();
 }
