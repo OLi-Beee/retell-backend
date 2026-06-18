@@ -3,15 +3,5 @@
     "api/**/*.js": {
       "runtime": "nodejs20.x"
     }
-  },
-  "rewrites": [
-    {
-      "source": "/call",
-      "destination": "/call.html"
-    },
-    {
-      "source": "/demo",
-      "destination": "/demo.html"
-    }
-  ]
+  }
 }
